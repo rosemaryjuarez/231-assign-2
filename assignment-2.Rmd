@@ -1,0 +1,12 @@
+---
+title: "assignment 2"
+authors: 
+---
+
+
+# packages
+
+```{r}
+library(tidyverse)
+```
+
