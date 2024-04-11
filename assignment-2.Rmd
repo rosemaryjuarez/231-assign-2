@@ -35,6 +35,6 @@ compute_yield = function(Tn, Tx, P){
   
   
   #define formula
-  Y <- -0.015Tn,2 - 0.0046T^2n,2 - 0.07P1 + 0.0043P^21 + 0.28
+  Y <- -0.015 * (T_min + T_max)/2 - 0.0046((T_min + T_max)/2)^2 - 0.07P1 + 0.0043P^21 + 0.28
 }
 ```
