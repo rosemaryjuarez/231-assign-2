@@ -6,12 +6,15 @@ output: html_document
 ---
 
 ```{r}
+#setting up our knitr options
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
                       tidy.opts = list(width.cutoff = 60), tidy = TRUE)
 ```
 
 ```{r, results="hide"}
 library(tidyverse)
+library(janitor)
+library(kableExtra)
 ```
 
 This is the almond equation that we need to create the function for:
@@ -22,32 +25,59 @@ where:
 
 Y = yield (tons of almonds per acre)
 
-T ~=~ Temperatures, where subscript numbers denote month of climate variable (Celsius)
+T = temperatures,where subscript numbers denote month of climate variable(Celsius)
 
-P ~=~ average daily precipitation (mm)
+P = average daily precipitation (mm)
 
 This is our conceptual model:
 
 ![](concept_model.png){width="90%"}
 
+## Reading in Data
+
+reading in climate data, by:
+
+-    setting up our working direction
+
+-    reading in data
+
+-   display data head
+
 ```{r}
 # Set your working directory to your home path first
-setwd("/Users/lianechen/Documents/5_MEDS/5_Spring_2024/eds230-env-modeling/231-assign-2")
+setwd(here::here())
+
 
 # Read in the climate data
 clim_data <- read.table("clim.txt", header = TRUE)
 
 # Display the first few rows of the dataframe
-head(clim_data)
+kable(head(clim_data), "pipe")
+```
+
+## Preprocessing
+
+We actually have two functions:
+
+-    `calculate_climate_statistics`
+
+-   `calculate_almond_yield`
+
+however `calculate_climate_statistics` serves as a pre-processing tool, so we will include that below as part of our data calculation. We will instead source `calculate_almost_yield`from our almond_yield.R script
+
+```{r}
+#-------------------------
+# PREPROCESSING FUNCTION
+#-------------------------
 
 # Generate your statistics, with the conceptual model we drew in mind:
-calculate_climate_statistics <- function(climate_data) {
+calculate_climate_statistics <- function(DATA) {
  
   # Calculate the minimum and maximum temperature, and total precipitation for each month of each year
   stats <- list(
-    MinTemp = aggregate(tmin_c ~ year + month, data = clim_data, FUN = min, na.rm = TRUE),
-    MaxTemp = aggregate(tmax_c ~ year + month, data = clim_data, FUN = max, na.rm = TRUE),
-    TotalPrecip = aggregate(precip ~ year + month, data = clim_data, FUN = sum, na.rm = TRUE)
+    MinTemp = aggregate(tmin_c ~ year + month, data = DATA, FUN = min, na.rm = TRUE),
+    MaxTemp = aggregate(tmax_c ~ year + month, data = DATA, FUN = max, na.rm = TRUE),
+    TotalPrecip = aggregate(precip ~ year + month, data = DATA, FUN = sum, na.rm = TRUE)
   )
   
   # Merge the individual statistics dataframes into one
@@ -56,35 +86,40 @@ calculate_climate_statistics <- function(climate_data) {
   # Sort the data frame by year and month
   climate_stats_df <- climate_stats_df[order(climate_stats_df$year, climate_stats_df$month), ]
   
-  return(climate_stats_df)
-}
+  return(climate_stats_df) 
+} #END FUNCTION
+
+#-------------------------------
+# RUNNING PRE-PROCESSING FUNCTION
+#-------------------------------
 
 # Create dataframe with stats
 climate_stats_df <- calculate_climate_statistics(clim_data)
 
-# Now let's write the function to find mean, min, and max using the conceptual model
-calculate_almond_yield <- function(climate_data) {
 
-  # Calculate the min temp for February and total precip for January for each year
-  feb_min_temp <- aggregate(tmin_c ~ year, data = climate_data[climate_data$month == 2,], FUN = min)
-  jan_precip <- aggregate(precip ~ year, data = climate_data[climate_data$month == 1,], FUN = sum)
-  
-  # Merge the February minimum temperature and January precipitation data
-  yield_data <- merge(feb_min_temp, jan_precip, by = "year")
-  
-  # Calculate the almond yield anomaly for each year using the formula
-  yield_data$almond_yield <- with(yield_data, -0.0157 * tmin_c - 0.00467 * tmin_c^2 - 
-                                            0.07 * precip + 0.0043 * precip^2 + 0.28)
-  
-  # Select the year and the calculated almond yield anomaly
-  yield_by_year <- yield_data[, c('year', 'almond_yield')]
-  
-  return(yield_by_year)
-}
+```
 
-#save as dataframe
+## Using Function and Final Calculations
+
+we will finally source our function within the same working directory. For our script, we calculated our almond yield. after running our yield, we calculate the mean, max, and min of our yield
+
+```{r}
+#--------------
+#   SOURCING
+#--------------
+source("almond_yield.R")
+
+
+#--------------
+#   FUNCTION
+#--------------
+#save as dataframe USING FUNCTION
 almond_yield_df <- calculate_almond_yield(clim_data)
 
+
+#------------------
+#  Mean, Max, Min
+#------------------
 #find mean yield
 mean_almond_yield <- mean(almond_yield_df$almond_yield, na.rm = TRUE)
 
