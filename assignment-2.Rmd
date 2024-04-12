@@ -6,38 +6,29 @@ output: html_document
 ---
 
 ```{r}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+```{r, results="hide"}
 library(tidyverse)
 ```
 
 This is the almond equation that we need to create the function for:
 
-Y = -0.015T~n,2~ - 0.0046T\^2~n,2~ - 0.07P~1~ + 0.0043P\^2~1~ + 0.28
+Y = -0.0157T~n,2~ - 0.0046(T~n,2~)\^2 - 0.07P~1~ + 0.0043(P~1~)\^2 + 0.28
 
 where:
 
-Y = yield (ton acre \^-1)
+Y = yield (tons of almonds per acre)
 
-T~n,2 = minimum temperatures, where subscript numbers denote month of climate variable (Celsius)~
+T ~=~ Temperatures, where subscript numbers denote month of climate variable (Celsius)
 
-T~x= maximum temperatures (Celsius)~
+P ~=~ average daily precipitation (mm)
 
-P~1 = average monthly precipitation (mm)~
+This is our conceptual model:
 
-```{r}
-#write the function
-compute_yield = function(Tn, Tx, P){
-  #make sure inputs are numeric
-  min_temp = as.numeric(min_temp)
-  max_temp = as.numeric(max_temp) #how to incorp?
-  precip = as.numeric(precip)
-  
-  #define variables
-  
-  
-  #define formula
-  Y <- -0.015 * (T_min + T_max)/2 - 0.0046((T_min + T_max)/2)^2 - 0.07P1 + 0.0043P^21 + 0.28
-}
-```
+![](concept_model.png){width="90%"}
 
 ```{r}
 # Set your working directory to your home path first
@@ -70,7 +61,6 @@ calculate_climate_statistics <- function(climate_data) {
 
 # Create dataframe with stats
 climate_stats_df <- calculate_climate_statistics(clim_data)
-print(climate_stats_df)
 
 # Now let's write the function to find mean, min, and max using the conceptual model
 calculate_almond_yield <- function(climate_data) {
@@ -92,9 +82,8 @@ calculate_almond_yield <- function(climate_data) {
   return(yield_by_year)
 }
 
-#save and print
+#save as dataframe
 almond_yield_df <- calculate_almond_yield(clim_data)
-print(almond_yield_df)
 
 #find mean yield
 mean_almond_yield <- mean(almond_yield_df$almond_yield, na.rm = TRUE)
