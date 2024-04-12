@@ -17,11 +17,11 @@ where:
 
 Y = yield (ton acre \^-1)
 
-T~n,2\ =\ minimum\ temperatures,\ where\ subscript\ numbers\ denote\ month\ of\ climate\ variable\ (Celsius)~
+T~n,2 = minimum temperatures, where subscript numbers denote month of climate variable (Celsius)~
 
-T~x=\ maximum\ temperatures\ (Celsius)~
+T~x= maximum temperatures (Celsius)~
 
-P~1\ =\ average\ monthly\ precipitation\ (mm)~
+P~1 = average monthly precipitation (mm)~
 
 ```{r}
 #write the function
@@ -37,4 +37,70 @@ compute_yield = function(Tn, Tx, P){
   #define formula
   Y <- -0.015 * (T_min + T_max)/2 - 0.0046((T_min + T_max)/2)^2 - 0.07P1 + 0.0043P^21 + 0.28
 }
+```
+
+```{r}
+# Set your working directory to your home path first
+setwd("/Users/lianechen/Documents/5_MEDS/5_Spring_2024/eds230-env-modeling/231-assign-2")
+
+# Now you can read the table with a relative path from your home directory
+clim_data <- read.table("clim.txt", header = TRUE)
+
+# Display the first few rows of the dataframe
+head(clim_data)
+
+calculate_climate_statistics <- function(climate_data) {
+ 
+  # Calculate the minimum and maximum temperature, and total precipitation
+  # for each month of each year
+  stats <- list(
+    MinTemp = aggregate(tmin_c ~ year + month, data = clim_data, FUN = min, na.rm = TRUE),
+    MaxTemp = aggregate(tmax_c ~ year + month, data = clim_data, FUN = max, na.rm = TRUE),
+    TotalPrecip = aggregate(precip ~ year + month, data = clim_data, FUN = sum, na.rm = TRUE)
+  )
+  
+  # Merge the individual statistics dataframes into one
+  climate_stats_df <- Reduce(function(...) merge(..., by = c("year", "month"), all = TRUE), stats)
+  
+  # Sort the data frame by year and month
+  climate_stats_df <- climate_stats_df[order(climate_stats_df$year, climate_stats_df$month), ]
+  
+  return(climate_stats_df)
+}
+
+# Create dataframe with stats
+climate_stats_df <- calculate_climate_statistics(clim_data)
+print(climate_stats_df)
+
+calculate_almond_yield <- function(climate_data) {
+
+  # Calculate the min temp for February and total precip for January for each year
+  feb_min_temp <- aggregate(tmin_c ~ year, data = climate_data[climate_data$month == 2,], FUN = min)
+  jan_precip <- aggregate(precip ~ year, data = climate_data[climate_data$month == 1,], FUN = sum)
+  
+  # Merge the February minimum temperature and January precipitation data
+  yield_data <- merge(feb_min_temp, jan_precip, by = "year")
+  
+  # Calculate the almond yield anomaly for each year using the formula
+  yield_data$almond_yield <- with(yield_data, -0.0157 * tmin_c - 0.00467 * tmin_c^2 - 
+                                            0.07 * precip + 0.0043 * precip^2 + 0.28)
+  
+  # Select the year and the calculated almond yield anomaly
+  yield_by_year <- yield_data[, c('year', 'almond_yield')]
+  
+  return(yield_by_year)
+}
+
+
+almond_yield_df <- calculate_almond_yield(clim_data)
+print(almond_yield_df)
+
+#find mean yield
+mean_almond_yield <- mean(almond_yield_df$almond_yield, na.rm = TRUE)
+
+# Print the mean almond yield 
+print(mean_almond_yield)
+
+# Print minimum daily temperature
+print(feb_min_temp)
 ```
