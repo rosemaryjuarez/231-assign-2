@@ -1,9 +1,9 @@
 ---
-title: "assignment 2"
-authors: 
+title: "EDS231- assignment 2"
+authors: "Shane O'Brian, Rosemary Juarez, Liane Chen"
+date: "2024-04-11"
+output: html_document
 ---
-
-# packages
 
 ```{r}
 library(tidyverse)
@@ -43,16 +43,16 @@ compute_yield = function(Tn, Tx, P){
 # Set your working directory to your home path first
 setwd("/Users/lianechen/Documents/5_MEDS/5_Spring_2024/eds230-env-modeling/231-assign-2")
 
-# Now you can read the table with a relative path from your home directory
+# Read in the climate data
 clim_data <- read.table("clim.txt", header = TRUE)
 
 # Display the first few rows of the dataframe
 head(clim_data)
 
+# Generate your statistics, with the conceptual model we drew in mind:
 calculate_climate_statistics <- function(climate_data) {
  
-  # Calculate the minimum and maximum temperature, and total precipitation
-  # for each month of each year
+  # Calculate the minimum and maximum temperature, and total precipitation for each month of each year
   stats <- list(
     MinTemp = aggregate(tmin_c ~ year + month, data = clim_data, FUN = min, na.rm = TRUE),
     MaxTemp = aggregate(tmax_c ~ year + month, data = clim_data, FUN = max, na.rm = TRUE),
@@ -72,6 +72,7 @@ calculate_climate_statistics <- function(climate_data) {
 climate_stats_df <- calculate_climate_statistics(clim_data)
 print(climate_stats_df)
 
+# Now let's write the function to find mean, min, and max using the conceptual model
 calculate_almond_yield <- function(climate_data) {
 
   # Calculate the min temp for February and total precip for January for each year
@@ -91,16 +92,19 @@ calculate_almond_yield <- function(climate_data) {
   return(yield_by_year)
 }
 
-
+#save and print
 almond_yield_df <- calculate_almond_yield(clim_data)
 print(almond_yield_df)
 
 #find mean yield
 mean_almond_yield <- mean(almond_yield_df$almond_yield, na.rm = TRUE)
 
-# Print the mean almond yield 
-print(mean_almond_yield)
+#Find the max and min yields
+max_almond_yield <- max(almond_yield_df$almond_yield, na.rm = TRUE)
+min_almond_yield <- min(almond_yield_df$almond_yield, na.rm = TRUE)
 
-# Print minimum daily temperature
-print(feb_min_temp)
+#Print the mean, max, and min yield anomolies
+print(mean_almond_yield)
+print(max_almond_yield)
+print(min_almond_yield)
 ```
