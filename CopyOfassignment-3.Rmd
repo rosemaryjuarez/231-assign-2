@@ -1,0 +1,62 @@
+---
+title: "230/232 Lab 3"
+Authors: "Shane O'Brian, Rosemary Juarez, Liane Chen"
+date: "2024-04-17"
+output: html_document
+---
+
+```{r setup}
+#setting up our knitr options
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+```{r libraries, results="hide"}
+#calling in libraries
+library(tidyverse)
+library(janitor)
+library(kableExtra)
+```
+
+```{r}
+# read in data: 
+clim_data <- read_table("clim.txt") %>% 
+  clean_names() #cleaning up the name
+
+# Display the first few rows of the dataframe
+kable(head(clim_data), "pipe")
+#will look bbetter once we run through html
+```
+
+
+## Lab Instructions
+
+For Assignment 3, our group will:
+
+-   Do a simple informal sensitivity analysis of almond yield profit using at least 2 parameters
+
+-   Create 2 graphs of the results - you can decide what is the most meaningful graph
+
+-   Write a short paragraph (in the Rmarkdown document) to summarize you interpretation of your model results (e.g what do 'take away' from your model and sensitivity analysis)
+
+
+## Sourcing and Running Models
+We combined our almond yield calculation and profit model in a new function script called `profit_model.R`. out output will be a dataframe
+```{r}
+#-----------------------------------
+#     Sourcing
+#-----------------------------------
+source("almond_yield.R")
+source("profit_model.R") # contains both almond yield calculation and profit model
+
+
+almond_yield_and_profit(clim_data, 2000, 100000, 5)
+
+```
+
+## Informal Sensitivity Analysis
+
+```{r}
+yields = parm %>% pmap(compute_almond_yield,clim=clim)
+```
+

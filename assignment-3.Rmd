@@ -5,6 +5,17 @@ date: "2024-04-17"
 output: html_document
 ---
 
+## Lab Instructions
+
+For Assignment 3, our group will:
+
+-   Do a simple informal sensitivity analysis of almond yield profit using at least 2 parameters
+
+-   Create 2 graphs of the results - you can decide what is the most meaningful graph
+
+-   Write a short paragraph (in the Rmarkdown document) to summarize you interpretation of your model results (e.g what do 'take away' from your model and sensitivity analysis)
+
+## Library and Read in Data
 ```{r setup}
 #setting up our knitr options
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
@@ -25,38 +36,146 @@ clim_data <- read_table("clim.txt") %>%
 
 # Display the first few rows of the dataframe
 kable(head(clim_data), "pipe")
-#will look bbetter once we run through html
+
 ```
 
 
-## Lab Instructions
-
-For Assignment 3, our group will:
-
--   Do a simple informal sensitivity analysis of almond yield profit using at least 2 parameters
-
--   Create 2 graphs of the results - you can decide what is the most meaningful graph
-
--   Write a short paragraph (in the Rmarkdown document) to summarize you interpretation of your model results (e.g what do 'take away' from your model and sensitivity analysis)
-
-
 ## Sourcing and Running Models
-We combined our almond yield calculation and profit model in a new function script called `profit_model.R`. out output will be a dataframe
-```{r}
+
+We combined our almond yield calculation and profit model in a new function script called `profit_model.R`. out output will be a dataframe, containing all necessary columns
+
+```{r sourcing}
 #-----------------------------------
 #     Sourcing
 #-----------------------------------
 source("almond_yield.R")
 source("profit_model.R") # contains both almond yield calculation and profit model
 
-
+#-----------------------------------
+#     optional: checking to see
+#     if it worked
+#-----------------------------------
 almond_yield_and_profit(clim_data, 2000, 100000, 5)
 
 ```
 
 ## Informal Sensitivity Analysis
 
+For our Informal Sensitivity Analysis, we have several steps: - generate samples for our two parameters (almond_price and acres)
+
+```{r sensitivity analysis, }
+#-----------------------------------
+#     GENERATE SAMPLES
+#-----------------------------------
+
+nsamples = 300 #will be used for both almond price and acres parameters
+
+#     ---- ALMOND PRICE ------
+
+almond_price_deviation = 0.15 #assuming +-15% uncertainty
+base_almond_price = 5000 #Average price of almonds per ton
+almond_price = runif(min=base_almond_price-almond_price_deviation*base_almond_price, #min
+                     max=base_almond_price+almond_price_deviation*base_almond_price, #max
+                     n=nsamples) #using nsample variable
+
+#     ---- ACRES ------
+#     
+acres_deviation = 0.15  #+-15% uncertainty
+base_acres = 100 #around the size of a big mall
+acres = runif(min=base_acres-acres_deviation*base_acres, 
+              max=base_acres+acres_deviation*base_acres, 
+              n=nsamples) #using nsample variable
+
+#-----------------------------------
+#     COMBINE
+#-----------------------------------
+# Combine parameters 
+parms = cbind.data.frame(almond_price, acres)
+
+#-----------------------------------
+#     RESULTS
+#-----------------------------------
+
+results = parms %>% pmap(almond_yield_and_profit, data=clim_data, cost_per_acre=3000)
+
+
+#extract mean profit
+mean_profit = map_df(results, function(x) {
+  x$profit[x$profit <= 0] = 0.01 # Replace non-positive profits with a small value
+  data.frame(mean_profit = mean(x$profit))
+})
+
+# and we can add the parameter values for each run
+profit_final = cbind.data.frame(mean_profit, parms)
+
+```
+
+## Plot
 ```{r}
-yields = parm %>% pmap(compute_almond_yield,clim=clim)
+p1 = ggplot(mean_profit, aes(almond_price, mean_profit)) + 
+  geom_point(color = "blue") +
+  labs(x = "Almond Price ($/ton)", y = "Mean Annual Profit ($)")
+p1
+```
+
+## Interpretation
+
+Based on the sensitivity analysis, we can see that the mean annual profit is highly sensitive to the almond price, with a wider range of potential profits as the price varies. The relationship appears to be roughly linear, with higher almond prices leading to higher profits.
+
+The sensitivity to the number of acres is also significant, but the relationship is not as strong as with the almond price. Increasing the number of acres leads to higher overall profits, but the marginal impact of adding more acres diminishes as the total area grows.
+
+These insights suggest that almond producers should focus on maximizing the price they can get for their almonds, as this has a larger impact on profitability than the total area under cultivation. However, expanding the total acreage can also improve overall profits, so a balanced approach considering both price and production scale may be the most effective strategy.
+
+
+```{r}
+
+# Prepare the parameters to sample
+nsamples = 300
+almond_price_deviation = 0.15
+base_almond_price = 5000
+almond_price = runif(min=base_almond_price-almond_price_deviation*base_almond_price, 
+                     max=base_almond_price+almond_price_deviation*base_almond_price, 
+                     n=nsamples)
+
+acres_deviation = 0.15  
+base_acres = 10
+acres = runif(min=base_acres-acres_deviation*base_acres, 
+              max=base_acres+acres_deviation*base_acres, 
+              n=nsamples)
+
+# Create a dataframe with the parameter combinations
+parms = data.frame(almond_price, acres)
+
+# Run the almond_yield_and_profit() function for each parameter combination
+results = pmap(parms, almond_yield_and_profit, data=clim_data, cost_per_acre=3000)
+
+# Extract the relevant columns from the results
+result_df = bind_rows(results) %>%
+  mutate(mean_profit = rowMeans(.[c("profit")]))
+
+# Exclude non-profitable scenarios
+profitable_rows = result_df$mean_profit > 0
+result_df_filtered = result_df[profitable_rows, ]
+
+result_df_filtered
+# Create the plots
+
+result_df_filtered %>% 
+  ggplot(aes(x = year, y = mean_profit)) +
+  geom_point()
+
+
+ggplot(result_df_filtered, aes(year, mean_profit)) + 
+  geom_point(color = "blue")# +
+  labs(x = "Almond Price ($/ton)", y = "Mean Annual Profit ($)")
+
+p2 = ggplot(result_df_filtered, aes(acres, mean_profit)) +
+  geom_point(color = "green") +
+  labs(x = "Acres", y = "Mean Annual Profit ($)")
+
+p1
+p2
+
+ggarrange(p1, p2, ncol = 2, nrow = 1)
 ```
 

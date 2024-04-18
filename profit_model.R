@@ -18,7 +18,7 @@ almond_yield_and_profit <- function(data, almond_price, cost_per_acre, acres) {
   yield_anomaly_by_year$almond_yield_tons_per_acre <- exp(yield_anomaly_by_year$almond_yield_anomaly)
   
   # Calculate the revenue from almond sales
-  yield_anomaly_by_year$revenue <- yield_anomaly_by_year$almond_yield_tons_per_acre * almond_price * acres
+  yield_anomaly_by_year$revenue <- yield_anomaly_by_year$almond_yield_tons_per_acre * almond_price * acres #add coeffient later
   
   # Calculate the total cost
   yield_anomaly_by_year$total_cost <- cost_per_acre * acres
@@ -26,5 +26,5 @@ almond_yield_and_profit <- function(data, almond_price, cost_per_acre, acres) {
   # Calculate the profit
   yield_anomaly_by_year$profit <- yield_anomaly_by_year$revenue - yield_anomaly_by_year$total_cost
   
-  return(yield_anomaly_by_year)
+  return(yield_anomaly_by_year) #should return a dataframe
 }
